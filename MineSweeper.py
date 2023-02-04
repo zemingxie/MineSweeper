@@ -9,10 +9,14 @@ def main():
     # load and set the logo
     #logo = pygame.image.load("logo32x32.png")
     #pygame.display.set_icon(logo)
-    pygame.display.set_caption("minimal program")
+    pygame.display.set_caption("Mine Sweeper")
      
     # create a surface on screen that has the size of 240 x 180
     screen = pygame.display.set_mode((240,180))
+
+    draw_board(screen, 10, 10)
+
+    pygame.display.flip()
      
     # define a variable to control the main loop
     running = True
@@ -25,6 +29,14 @@ def main():
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
                 running = False
+
+def draw_board(screen: pygame.Surface, width: int, height: int):
+    darkGreen = pygame.Color(38, 206, 2)
+    lightGreen = pygame.Color(119, 255, 90)
+    startRect = pygame.Rect(0, 0, 30, 30)
+    pygame.draw.rect(screen, darkGreen, startRect)
+    pygame.draw.rect(screen, lightGreen, pygame.Rect(30, 0, 30, 30))
+
      
      
 # run the main function only if this module is executed as the main script
