@@ -51,17 +51,18 @@ def initialize_board(width: int, height: int) -> pygame.Surface:
 # mineNum represent the number of mines. 
 ####
 def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.ndarray:
-    #board_coordinates = [(i, j) for i in range(0,width) for j in range(0, height)]
-    #mine_coordinates = random.sample(board_coordinates, mineNum)  
-    board = np.array([[0 for i in range(width)] for j in range(height)])
-    board[x, y] = 'b'
-    adj_squares = board[max((y_pos-1),0):min(height + 2, y_pos + 2), max((x_pos-1),0):min(width + 2, x_pos + 2)]
+    board = np.array([[0 for i in range(height)] for j in range(width)])
+    board[x, y] = False
+    adj_squares = board[min((y-1), 0):max((y+1),height-1), min((x-1), 0):max((x+1),width-1)]
     for i in range(mineNum):
         while True:
             x_pos, y_pos = random.randint(0, width), random.randint(0,height)
-            if board[y_pos, x_pos] != 'b':
-                board[y_pos, x_pos] = 'b'
+            if (board[x_pos, y_pos] != board[x, y]) and (board[x_pos, y_pos] not in adj_squares):
+                board[y_pos, x_pos] = True
                 break
+    
+    return board
+
      
 if __name__=="__main__":
     main()
