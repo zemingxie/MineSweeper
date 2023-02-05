@@ -1,18 +1,14 @@
-# import the pygame module, so you can use it
 import pygame
 import numpy as np
  
-# define a main function
 def main():
-    # initialize the pygame module
+
     pygame.init()
-    # load and set the logo
     #logo = pygame.image.load("logo32x32.png")
     #pygame.display.set_icon(logo)
     pygame.display.set_caption("Mine Sweeper")
      
-    # create a surface on screen that has the size of 240 x 180
-    screen = pygame.display.set_mode((240,180))
+    screen = pygame.display.set_mode((300,300))
 
     draw_board(screen, 10, 10)
 
