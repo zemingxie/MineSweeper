@@ -106,16 +106,16 @@ def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.n
 
 ####
 # This function determines the square mouse is at based on mouse pixel position.
-# (-1,-1) means out of screen
+# You can use pygame.mouse.get_pos() to get the mouse position. (-1,-1) means out of screen
 ####
-def get_sqaure_index(mouse_x, mouse_y) -> tuple[int, int]:
+def get_sqaure_index(width: int, height: int) -> tuple[int, int]:
     return (-1, -1)
 
 ####
 # Highlight the sqaure where the curser is at. If previous mouse position is on the same square
 # as the current mouse poition, do nothing. If the curser is at a revealed location, do nothing.
 # Make sure to redraw 2 potions of the screen. One to get rid of highlight. One to
-# add the highlight. You can use pygame.mouse.get_pos() to get the mouse position. prev_x = -1 and
+# add the highlight. You can use get_sqaure_index() to get the square index mouse is at. prev_x = -1 and
 # prev_y = -1 means mouse is outside of screen. Use width and height to observe if mouse is outside of 
 # the screen. Return current index of the square mouse is at. (-1,-1) means outside.
 ####
