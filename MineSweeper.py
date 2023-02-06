@@ -10,7 +10,7 @@ def main():
     #pygame.display.set_icon(logo)
     pygame.display.set_caption("Mine Sweeper")
 
-    width, height = (30, 40)
+    width, height = (10, 10)
     screen = initialize_board(width, height)
     #generate_mine(4, 4, 2, 2, 1)
 
@@ -20,11 +20,12 @@ def main():
     # Initialise clock
     clock = pygame.time.Clock()
 
-    prev_mouse_x = -1
-    prev_mouse_y = -1
+    prev_x = -1
+    prev_y = -1
      
     # main loop
     while running:
+        print(pygame.mouse.get_pos())
         # Make sure game doesn't run at more than 60 frames per second
         clock.tick(60)
         # event handling, gets all event from the event queue
@@ -102,6 +103,13 @@ def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.n
         # translate index to the mine map and set it to 1 to indicate mines
         mines[np.unravel_index(flate_index, (height, width))] = 1
     return mines
+
+####
+# This function determines the square mouse is at based on mouse pixel position.
+# (-1,-1) means out of screen
+####
+def get_sqaure_index(mouse_x, mouse_y) -> tuple[int, int]:
+    return (-1, -1)
 
 ####
 # Highlight the sqaure where the curser is at. If previous mouse position is on the same square
