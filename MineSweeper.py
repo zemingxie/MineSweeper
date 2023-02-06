@@ -1,6 +1,5 @@
 import pygame
 import numpy as np
-import random
 
 SQAURE_PIXEL_SIZE = 30
  
@@ -17,9 +16,17 @@ def main():
 
     # define a variable to control the main loop
     running = True
+
+    # Initialise clock
+    clock = pygame.time.Clock()
+
+    prev_mouse_x = -1
+    prev_mouse_y = -1
      
     # main loop
     while running:
+        # Make sure game doesn't run at more than 60 frames per second
+        clock.tick(60)
         # event handling, gets all event from the event queue
         for event in pygame.event.get():
             # only do something if the event is of type QUIT
@@ -97,12 +104,15 @@ def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.n
     return mines
 
 ####
-# Highlight the sqaure where the curser is at. If the curser is at a revealed location, do nothing.
-# Make sure to redraw the screen first to get rid of previous highlighted portion. You can use 
-# pygame.mouse.get_pos() to get the mouse position.
+# Highlight the sqaure where the curser is at. If previous mouse position is on the same square
+# as the current mouse poition, do nothing. If the curser is at a revealed location, do nothing.
+# Make sure to redraw 2 potions of the screen. One to get rid of highlight. One to
+# add the highlight. You can use pygame.mouse.get_pos() to get the mouse position. prev_x = -1 and
+# prev_y = -1 means mouse is outside of screen. Use width and height to observe if mouse is outside of 
+# the screen. Return current index of the square mouse is at. (-1,-1) means outside.
 ####
-def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray):
-    return null
+def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int, width: int, height: int) -> tuple[int, int]:
+    return (-1, -1)
 
 ####
 # x and y is the user clicked location, update the revealed board, return true when
