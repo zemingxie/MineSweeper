@@ -5,6 +5,7 @@ SQAURE_PIXEL_SIZE = 30
 DARK_GREEN = pygame.Color(38, 206, 2)
 LIGHT_GREEN = pygame.Color(119, 255, 90)
 HIGHLIGHT_GREEN = pygame.Color(179, 255, 179)
+WIDTH, HEIGHT = (10, 10)
 
  
 def main():
@@ -14,8 +15,8 @@ def main():
     #pygame.display.set_icon(logo)
     pygame.display.set_caption("Mine Sweeper")
 
-    width, height = (10, 10)
-    screen = initialize_board(width, height)
+    
+    screen = initialize_board()
 
     # define a variable to control the main loop
     running = True
@@ -23,13 +24,13 @@ def main():
     # Initialise clock
     clock = pygame.time.Clock()
 
-    revealed_board = initialize_revealed_board(width, height)
+    revealed_board = initialize_revealed_board()
 
     prev_x = -1
     prev_y = -1
 
     start = False
-    mines = np.zeros((height, width))
+    mines = np.zeros((HEIGHT, WIDTH))
      
     # main loop
     while running:
@@ -40,9 +41,10 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 if not start:
-                    mines = generate_mine(width, height, curr_x, curr_y, int(np.sqrt(width * height)))
+                    mines = generate_mine(curr_x, curr_y, int(np.sqrt(WIDTH * HEIGHT)))
                     print(mines)
                     reveal_board(mines, revealed_board, curr_x, curr_y)
+                    print(revealed_board)
                     start = True
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
@@ -56,13 +58,13 @@ def main():
 # there should be. I.e. width of 10 and height of 10 is a 10x10
 # board.
 ####
-def initialize_board(width: int, height: int) -> pygame.Surface: 
-    screenWidth = SQAURE_PIXEL_SIZE * width
-    screenHeight = SQAURE_PIXEL_SIZE * height
+def initialize_board() -> pygame.Surface: 
+    screenWidth = SQAURE_PIXEL_SIZE * WIDTH
+    screenHeight = SQAURE_PIXEL_SIZE * HEIGHT
     screen = pygame.display.set_mode((screenWidth,screenHeight))
     screen.fill(LIGHT_GREEN)
-    for x in range(width):
-        for y in range(height):
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
             if (x + y) % 2 == 0:
                 rect = pygame.Rect(x * SQAURE_PIXEL_SIZE, y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
                 pygame.draw.rect(screen, DARK_GREEN, rect)
@@ -81,8 +83,8 @@ def initialize_numbers() -> list[pygame.Surface]:
 # -3 -> mine, -2 -> flag, -1 -> unrevealed, 0 - 8 -> revealed with number of surrounding mines as the number
 # revealed board should start with all -1s.
 ####
-def initialize_revealed_board(width: int, height: int) -> np.ndarray:
-    return np.zeros((height, width)) - 1
+def initialize_revealed_board() -> np.ndarray:
+    return np.zeros((HEIGHT, WIDTH)) - 1
 
 ####
 # Generate the mines. width and height is the size of the board, x and y is the 
@@ -91,25 +93,25 @@ def initialize_revealed_board(width: int, height: int) -> np.ndarray:
 # array of size (width, height), and true represent mine present, false represent mine absent.
 # mineNum represent the number of mines. 
 ####
-def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.ndarray:
+def generate_mine(x: int, y: int, mineNum: int) -> np.ndarray:
     # get board with increase numbers based on flattened index
-    board = np.arange(width*height).reshape((height, width))
+    board = np.arange(WIDTH*HEIGHT).reshape((HEIGHT, WIDTH))
 
     # masked the initial position and surrounding area
-    mask = np.zeros(width*height).reshape((height, width))
-    mask[max((x-1),0):min((x+2), height), max((y-1),0):min((y+2), width)] = 1
+    mask = np.zeros(WIDTH*HEIGHT).reshape((HEIGHT, WIDTH))
+    mask[max((x-1),0):min((x+2), HEIGHT), max((y-1),0):min((y+2), WIDTH)] = 1
 
     # create the masked board with random permutation of the flattened board
     masked_board = np.ma.masked_array(np.random.permutation(board.flatten()), mask=mask)
 
     # create mine map
-    mines = np.zeros((height, width))
+    mines = np.zeros((HEIGHT, WIDTH))
 
     # sort the array and get index of mineNum smallest numbers of the masked array
     for flate_index in np.argsort(masked_board)[:mineNum]:
         # translate index to the mine map and set it to 1 to indicate mines
-        mines[np.unravel_index(flate_index, (height, width))] = 1
-    return mines
+        mines[np.unravel_index(flate_index, (HEIGHT, WIDTH))] = 1
+    return mines > 0.5
 
 ####
 # This function determines the square mouse is at based on mouse pixel position.
@@ -150,11 +152,17 @@ def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x:
             draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
     return (curr_x, curr_y)
 
+def get_nearby_mines(mines: np.ndarray, x: int, y: int) -> int:
+    near_by_indexes = [[]]
+    return -1
+
 ####
 # x and y is the user clicked location, update the revealed board, return true when
 # no mine is hit, return false when user clicked on mine
 ####
 def reveal_board(mines: np.ndarray, revealed_board: np.ndarray, x: int, y: int) -> bool:
+    if mines[x, y] == True:
+        return True
     return False
 
 ####
