@@ -2,6 +2,10 @@ import pygame
 import numpy as np
 
 SQAURE_PIXEL_SIZE = 30
+DARK_GREEN = pygame.Color(38, 206, 2)
+LIGHT_GREEN = pygame.Color(119, 255, 90)
+HIGHLIGHT_GREEN = pygame.Color(179, 255, 179)
+
  
 def main():
 
@@ -12,7 +16,6 @@ def main():
 
     width, height = (10, 10)
     screen = initialize_board(width, height)
-    #generate_mine(4, 4, 2, 2, 1)
 
     # define a variable to control the main loop
     running = True
@@ -20,20 +23,32 @@ def main():
     # Initialise clock
     clock = pygame.time.Clock()
 
+    revealed_board = initialize_revealed_board(width, height)
+
     prev_x = -1
     prev_y = -1
+
+    start = False
+    mines = np.zeros((height, width))
      
     # main loop
     while running:
-        print(pygame.mouse.get_pos())
         # Make sure game doesn't run at more than 60 frames per second
         clock.tick(60)
+        curr_x, curr_y = highlight_square(screen, revealed_board, prev_x, prev_y)
         # event handling, gets all event from the event queue
         for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONUP:
+                if not start:
+                    mines = generate_mine(width, height, curr_x, curr_y, int(np.sqrt(width * height)))
+                    print(mines)
+                    reveal_board(mines, revealed_board, curr_x, curr_y)
+                    start = True
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
                 running = False
+        prev_x, prev_y = curr_x, curr_y
 
 ####
 # Initialize screen based on size passed in, and draw the board,
@@ -42,23 +57,17 @@ def main():
 # board.
 ####
 def initialize_board(width: int, height: int) -> pygame.Surface: 
-    darkGreen = pygame.Color(38, 206, 2)
-    lightGreen = pygame.Color(119, 255, 90)
     screenWidth = SQAURE_PIXEL_SIZE * width
     screenHeight = SQAURE_PIXEL_SIZE * height
     screen = pygame.display.set_mode((screenWidth,screenHeight))
-    screen.fill(lightGreen)
-    if width >= height:
-        for row in range(width):
-            for col in range(row % 2, width, 2):
-                darkRect = pygame.Rect(col * SQAURE_PIXEL_SIZE, row * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
-                pygame.draw.rect(screen, darkGreen, darkRect)
-    else:
-        for row in range(height):
-            for col in range(row % 2, height, 2):
-                darkRect = pygame.Rect(col * SQAURE_PIXEL_SIZE, row * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
-                pygame.draw.rect(screen, darkGreen, darkRect)
+    screen.fill(LIGHT_GREEN)
+    for x in range(width):
+        for y in range(height):
+            if (x + y) % 2 == 0:
+                rect = pygame.Rect(x * SQAURE_PIXEL_SIZE, y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
+                pygame.draw.rect(screen, DARK_GREEN, rect)
     pygame.display.flip()
+    return screen
 
 ####
 # Initialize numbers to a picture asset. Use https://stackoverflow.com/questions/20842801/how-to-display-text-in-pygame
@@ -73,7 +82,7 @@ def initialize_numbers() -> list[pygame.Surface]:
 # revealed board should start with all -1s.
 ####
 def initialize_revealed_board(width: int, height: int) -> np.ndarray:
-    return null
+    return np.zeros((height, width)) - 1
 
 ####
 # Generate the mines. width and height is the size of the board, x and y is the 
@@ -85,7 +94,6 @@ def initialize_revealed_board(width: int, height: int) -> np.ndarray:
 def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.ndarray:
     # get board with increase numbers based on flattened index
     board = np.arange(width*height).reshape((height, width))
-    print(board)
 
     # masked the initial position and surrounding area
     mask = np.zeros(width*height).reshape((height, width))
@@ -93,7 +101,6 @@ def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.n
 
     # create the masked board with random permutation of the flattened board
     masked_board = np.ma.masked_array(np.random.permutation(board.flatten()), mask=mask)
-    print(masked_board)
 
     # create mine map
     mines = np.zeros((height, width))
@@ -108,8 +115,19 @@ def generate_mine(width: int, height: int, x: int, y: int, mineNum: int) -> np.n
 # This function determines the square mouse is at based on mouse pixel position.
 # You can use pygame.mouse.get_pos() to get the mouse position. (-1,-1) means out of screen
 ####
-def get_sqaure_index(width: int, height: int) -> tuple[int, int]:
-    return (-1, -1)
+def get_sqaure_index() -> tuple[int, int]:
+    if not pygame.mouse.get_focused():
+        return (-1, -1)
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    return (int(mouse_x/SQAURE_PIXEL_SIZE), int(mouse_y/SQAURE_PIXEL_SIZE))
+
+####
+# draw a square given color and index
+####
+def draw_square(screen: pygame.Surface, x: int, y: int, color: pygame.Color):
+    rect = pygame.Rect(x * SQAURE_PIXEL_SIZE, y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
+    pygame.draw.rect(screen, color, rect)
+    pygame.display.update(rect)
 
 ####
 # Highlight the sqaure where the curser is at. If previous mouse position is on the same square
@@ -119,15 +137,25 @@ def get_sqaure_index(width: int, height: int) -> tuple[int, int]:
 # prev_y = -1 means mouse is outside of screen. Use width and height to observe if mouse is outside of 
 # the screen. Return current index of the square mouse is at. (-1,-1) means outside.
 ####
-def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int, width: int, height: int) -> tuple[int, int]:
-    return (-1, -1)
+def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int) -> tuple[int, int]:
+    curr_x, curr_y = get_sqaure_index()
+    if (curr_x, curr_y) == (prev_x, prev_y):
+        return (curr_x, curr_y)
+    if (curr_x, curr_y) != (-1, -1):
+        draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
+    if (prev_x, prev_y) != (-1, -1):
+        if (prev_x + prev_y) % 2 == 0:
+            draw_square(screen, prev_x, prev_y, DARK_GREEN)
+        else:
+            draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
+    return (curr_x, curr_y)
 
 ####
 # x and y is the user clicked location, update the revealed board, return true when
 # no mine is hit, return false when user clicked on mine
 ####
 def reveal_board(mines: np.ndarray, revealed_board: np.ndarray, x: int, y: int) -> bool:
-    return null
+    return False
 
 ####
 # draw revealed board, for now mine use red color, flag use yellow color, and 0-8 will
