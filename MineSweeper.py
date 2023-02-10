@@ -45,7 +45,7 @@ def main():
             curr_x, curr_y = highlight_square(screen, revealed_board, prev_x, prev_y, num_img)
         # event handling, gets all event from the event queue
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONUP and not stop:
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 1 and not stop:
                 if not start:
                     mines = generate_mine(curr_x, curr_y, 10)
                     print(mines)
@@ -56,9 +56,11 @@ def main():
                         stop = True
                     draw_board(screen, revealed_board, num_img)
                     print(revealed_board)
-                if np.array_equal(revealed_board == -1, mines):
+                if np.array_equal(np.logical_or(revealed_board == -1, revealed_board == -2), mines):
                     print("You WIN!!")
                     stop = True
+            if event.type == pygame.MOUSEBUTTONUP and event.button == 3 and not stop:
+                add_flag(screen, revealed_board, curr_x, curr_y)
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
@@ -83,6 +85,18 @@ def initialize_board() -> pygame.Surface:
                 pygame.draw.rect(screen, DARK_GREEN, rect)
     pygame.display.flip()
     return screen
+
+def add_flag(screen: pygame.Surface, revealed_board: np.ndarray, x: int, y: int):
+    my_font = pygame.font.SysFont('Comic Sans MS', 20)
+    rect = pygame.Rect(x * SQAURE_PIXEL_SIZE, y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
+    if revealed_board[y, x] == -1:
+        revealed_board[y, x] = -2
+        screen.blit(my_font.render("|>", False, (255, 0, 0)), (x*SQAURE_PIXEL_SIZE,y*SQAURE_PIXEL_SIZE))
+        pygame.display.update(rect)
+    elif revealed_board[y, x] == -2:
+        revealed_board[y, x] = -1
+        pygame.draw.rect(screen, HIGHLIGHT_GREEN, rect)
+        pygame.display.update(rect)
 
 ####
 # Initialize numbers to a picture asset. Use https://stackoverflow.com/questions/20842801/how-to-display-text-in-pygame
@@ -155,6 +169,7 @@ def draw_square(screen: pygame.Surface, x: int, y: int, color: pygame.Color):
 ####
 def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int, number_image: list[pygame.Surface]) -> tuple[int, int]:
     curr_x, curr_y = get_sqaure_index()
+    my_font = pygame.font.SysFont('Comic Sans MS', 20)
     if (curr_x, curr_y) == (prev_x, prev_y):
         return (curr_x, curr_y)
     if (curr_x, curr_y) != (-1, -1):
@@ -165,6 +180,10 @@ def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x:
             pygame.display.update(rect)
         elif revealed_board[curr_y, curr_x] == -1:
             draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
+        elif revealed_board[curr_y, curr_x] == -2:
+            draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
+            screen.blit(my_font.render("|>", False, (255, 0, 0)), (curr_x*SQAURE_PIXEL_SIZE,curr_y*SQAURE_PIXEL_SIZE))
+            pygame.display.update(rect)
     if (prev_x, prev_y) != (-1, -1):
         rect = pygame.Rect(prev_x * SQAURE_PIXEL_SIZE, prev_y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
         if revealed_board[prev_y, prev_x] > 0:
@@ -179,6 +198,15 @@ def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x:
                 draw_square(screen, prev_x, prev_y, DARK_GREEN)
             else:
                 draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
+        elif revealed_board[prev_y, prev_x] == -2:
+            if (prev_x + prev_y) % 2 == 0:
+                draw_square(screen, prev_x, prev_y, DARK_GREEN)
+                screen.blit(my_font.render("|>", False, (255, 0, 0)), (prev_x*SQAURE_PIXEL_SIZE,prev_y*SQAURE_PIXEL_SIZE))
+                pygame.display.update(rect)
+            else:
+                draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
+                screen.blit(my_font.render("|>", False, (255, 0, 0)), (prev_x*SQAURE_PIXEL_SIZE,prev_y*SQAURE_PIXEL_SIZE))
+                pygame.display.update(rect)
     return (curr_x, curr_y)
 
 def get_nearby_mines(mines: np.ndarray, x: int, y: int) -> int:
