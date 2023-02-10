@@ -34,22 +34,31 @@ def main():
 
     start = False
     mines = np.zeros((HEIGHT, WIDTH))
+    num_img = initialize_numbers()
+    stop = False
      
     # main loop
     while running:
         # Make sure game doesn't run at more than 60 frames per second
         clock.tick(60)
-        curr_x, curr_y = highlight_square(screen, revealed_board, prev_x, prev_y)
+        if not stop:
+            curr_x, curr_y = highlight_square(screen, revealed_board, prev_x, prev_y, num_img)
         # event handling, gets all event from the event queue
         for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONUP:
+            if event.type == pygame.MOUSEBUTTONUP and not stop:
                 if not start:
                     mines = generate_mine(curr_x, curr_y, 10)
                     print(mines)
                     start = True
-                reveal_board(mines, revealed_board, curr_x, curr_y)
-                draw_board(screen, revealed_board, list())
-                print(revealed_board)
+                if revealed_board[curr_y, curr_x] == -1:
+                    if reveal_board(mines, revealed_board, curr_x, curr_y):
+                        print("You lost")
+                        stop = True
+                    draw_board(screen, revealed_board, num_img)
+                    print(revealed_board)
+                if np.array_equal(revealed_board == -1, mines):
+                    print("You WIN!!")
+                    stop = True
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
@@ -77,10 +86,11 @@ def initialize_board() -> pygame.Surface:
 
 ####
 # Initialize numbers to a picture asset. Use https://stackoverflow.com/questions/20842801/how-to-display-text-in-pygame
-# as a guide. This function will return a list of text Surface 1-8 for later use
+# as a guide. This function will return a list of text Surface 0-8 for later use
 ####
 def initialize_numbers() -> list[pygame.Surface]:
-    return list()
+    my_font = pygame.font.SysFont('Comic Sans MS', 20)
+    return [my_font.render(str(i), False, (0, 0, 0)) for i in range(9)]
 
 ####
 # Initialize revealed board. revealed board should be an int ndarray with size (width, height),
@@ -143,21 +153,27 @@ def draw_square(screen: pygame.Surface, x: int, y: int, color: pygame.Color):
 # prev_y = -1 means mouse is outside of screen. Use width and height to observe if mouse is outside of 
 # the screen. Return current index of the square mouse is at. (-1,-1) means outside.
 ####
-def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int) -> tuple[int, int]:
+def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x: int, prev_y: int, number_image: list[pygame.Surface]) -> tuple[int, int]:
     curr_x, curr_y = get_sqaure_index()
     if (curr_x, curr_y) == (prev_x, prev_y):
         return (curr_x, curr_y)
     if (curr_x, curr_y) != (-1, -1):
+        rect = pygame.Rect(curr_x * SQAURE_PIXEL_SIZE, curr_y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
         if revealed_board[curr_y, curr_x] > 0:
             draw_square(screen, curr_x, curr_y, HIGHLIGHT_BROWN)
+            screen.blit(number_image[revealed_board[curr_y, curr_x]], (curr_x*SQAURE_PIXEL_SIZE,curr_y*SQAURE_PIXEL_SIZE))
+            pygame.display.update(rect)
         elif revealed_board[curr_y, curr_x] == -1:
             draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
     if (prev_x, prev_y) != (-1, -1):
+        rect = pygame.Rect(prev_x * SQAURE_PIXEL_SIZE, prev_y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
         if revealed_board[prev_y, prev_x] > 0:
             if (prev_x + prev_y) % 2 == 0:
                 draw_square(screen, prev_x, prev_y, DARK_BROWN)
             else:
                 draw_square(screen, prev_x, prev_y, LIGHT_BROWN)
+            screen.blit(number_image[revealed_board[prev_y, prev_x]], (prev_x*SQAURE_PIXEL_SIZE,prev_y*SQAURE_PIXEL_SIZE))
+            pygame.display.update(rect)
         elif revealed_board[prev_y, prev_x] == -1:
             if (prev_x + prev_y) % 2 == 0:
                 draw_square(screen, prev_x, prev_y, DARK_GREEN)
@@ -194,13 +210,17 @@ def reveal_board(mines: np.ndarray, revealed_board: np.ndarray, x: int, y: int) 
 def draw_board(screen: pygame.Surface, revealed_board: np.ndarray, number_image: list[pygame.Surface]):
     for x in range(WIDTH):
         for y in range(HEIGHT):
+            rect = pygame.Rect(x * SQAURE_PIXEL_SIZE, y * SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE, SQAURE_PIXEL_SIZE)
             if revealed_board[y, x] > -1:
                 if (x + y) % 2 == 0:
-                    draw_square(screen, x, y, DARK_BROWN)
+                    pygame.draw.rect(screen, DARK_BROWN, rect)
                 else:
-                    draw_square(screen, x, y, LIGHT_BROWN)
+                    pygame.draw.rect(screen, LIGHT_BROWN, rect)
+                if revealed_board[y, x] > 0:
+                    screen.blit(number_image[revealed_board[y, x]], (x*SQAURE_PIXEL_SIZE,y*SQAURE_PIXEL_SIZE))
             if revealed_board[y, x] == -3:
-                draw_square(screen, x, y, RED)
+                pygame.draw.rect(screen, RED, rect)
+            pygame.display.update(rect)
 
 if __name__=="__main__":
     main()
