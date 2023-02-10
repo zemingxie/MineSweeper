@@ -5,6 +5,10 @@ SQAURE_PIXEL_SIZE = 30
 DARK_GREEN = pygame.Color(38, 206, 2)
 LIGHT_GREEN = pygame.Color(119, 255, 90)
 HIGHLIGHT_GREEN = pygame.Color(179, 255, 179)
+DARK_BROWN = pygame.Color(210, 164, 121)
+LIGHT_BROWN = pygame.Color(217, 177, 140)
+HIGHLIGHT_BROWN = pygame.Color(230, 203, 179)
+RED = pygame.Color(230, 0, 0)
 WIDTH, HEIGHT = (10, 10)
 
  
@@ -25,7 +29,6 @@ def main():
     clock = pygame.time.Clock()
 
     revealed_board = initialize_revealed_board()
-
     prev_x = -1
     prev_y = -1
 
@@ -41,11 +44,12 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.MOUSEBUTTONUP:
                 if not start:
-                    mines = generate_mine(curr_x, curr_y, int(np.sqrt(WIDTH * HEIGHT)))
+                    mines = generate_mine(curr_x, curr_y, 10)
                     print(mines)
-                    reveal_board(mines, revealed_board, curr_x, curr_y)
-                    print(revealed_board)
                     start = True
+                reveal_board(mines, revealed_board, curr_x, curr_y)
+                draw_board(screen, revealed_board, list())
+                print(revealed_board)
             # only do something if the event is of type QUIT
             if event.type == pygame.QUIT:
                 # change the value to False, to exit the main loop
@@ -84,7 +88,7 @@ def initialize_numbers() -> list[pygame.Surface]:
 # revealed board should start with all -1s.
 ####
 def initialize_revealed_board() -> np.ndarray:
-    return np.zeros((HEIGHT, WIDTH)) - 1
+    return np.zeros((HEIGHT, WIDTH), dtype = np.int16) - 1
 
 ####
 # Generate the mines. width and height is the size of the board, x and y is the 
@@ -99,7 +103,7 @@ def generate_mine(x: int, y: int, mineNum: int) -> np.ndarray:
 
     # masked the initial position and surrounding area
     mask = np.zeros(WIDTH*HEIGHT).reshape((HEIGHT, WIDTH))
-    mask[max((x-1),0):min((x+2), HEIGHT), max((y-1),0):min((y+2), WIDTH)] = 1
+    mask[max((y-1),0):min((y+2), HEIGHT), max((x-1),0):min((x+2), WIDTH)] = 1
 
     # create the masked board with random permutation of the flattened board
     masked_board = np.ma.masked_array(np.random.permutation(board.flatten()), mask=mask)
@@ -144,25 +148,43 @@ def highlight_square(screen: pygame.Surface, revealed_board: np.ndarray, prev_x:
     if (curr_x, curr_y) == (prev_x, prev_y):
         return (curr_x, curr_y)
     if (curr_x, curr_y) != (-1, -1):
-        draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
+        if revealed_board[curr_y, curr_x] > 0:
+            draw_square(screen, curr_x, curr_y, HIGHLIGHT_BROWN)
+        elif revealed_board[curr_y, curr_x] == -1:
+            draw_square(screen, curr_x, curr_y, HIGHLIGHT_GREEN)
     if (prev_x, prev_y) != (-1, -1):
-        if (prev_x + prev_y) % 2 == 0:
-            draw_square(screen, prev_x, prev_y, DARK_GREEN)
-        else:
-            draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
+        if revealed_board[prev_y, prev_x] > 0:
+            if (prev_x + prev_y) % 2 == 0:
+                draw_square(screen, prev_x, prev_y, DARK_BROWN)
+            else:
+                draw_square(screen, prev_x, prev_y, LIGHT_BROWN)
+        elif revealed_board[prev_y, prev_x] == -1:
+            if (prev_x + prev_y) % 2 == 0:
+                draw_square(screen, prev_x, prev_y, DARK_GREEN)
+            else:
+                draw_square(screen, prev_x, prev_y, LIGHT_GREEN)
     return (curr_x, curr_y)
 
 def get_nearby_mines(mines: np.ndarray, x: int, y: int) -> int:
-    near_by_indexes = [[]]
-    return -1
+    return np.sum(mines[max(0, y-1):min(HEIGHT, y+2), max(0, x-1):min(WIDTH, x+2)])
 
 ####
-# x and y is the user clicked location, update the revealed board, return true when
-# no mine is hit, return false when user clicked on mine
+# x and y is the user clicked location, update the revealed board, return whether current position
+# is mine, if it is zero, check all nearby location by resursively calling this function
 ####
 def reveal_board(mines: np.ndarray, revealed_board: np.ndarray, x: int, y: int) -> bool:
-    if mines[x, y] == True:
+    if x < 0 or x >= WIDTH or y < 0 or y >= HEIGHT:
+        return False
+    if mines[y, x]:
+        revealed_board[y, x] = -3
         return True
+    if revealed_board[y, x] != -1:
+        return False
+    revealed_board[y, x] = get_nearby_mines(mines, x, y)
+    if revealed_board[y, x] == 0:
+        nearby_index = np.array([[-1,-1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]) + np.array([x, y])
+        for (curr_x, curr_y) in nearby_index:
+            reveal_board(mines, revealed_board, curr_x, curr_y)
     return False
 
 ####
@@ -170,7 +192,15 @@ def reveal_board(mines: np.ndarray, revealed_board: np.ndarray, x: int, y: int) 
 # use light brown and dark brown as background color. For 1-8, also draw the number on top
 ####
 def draw_board(screen: pygame.Surface, revealed_board: np.ndarray, number_image: list[pygame.Surface]):
-    return null
-     
+    for x in range(WIDTH):
+        for y in range(HEIGHT):
+            if revealed_board[y, x] > -1:
+                if (x + y) % 2 == 0:
+                    draw_square(screen, x, y, DARK_BROWN)
+                else:
+                    draw_square(screen, x, y, LIGHT_BROWN)
+            if revealed_board[y, x] == -3:
+                draw_square(screen, x, y, RED)
+
 if __name__=="__main__":
     main()
